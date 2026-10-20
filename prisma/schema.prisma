@@ -1,0 +1,419 @@
+// Portfolio Immortalized Prisma Schema
+// Reference: TDD Chapter 16 and Chapter 17
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ==============================================================================
+// 1. Identity, Profile & Consents
+// ==============================================================================
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  profile               UserProfile?
+  consents              ConsentRecord[]
+  adminRoleAssignments AdminRoleAssignment[]
+  caseDecisions         CaseDecision[]
+
+  // Relationships
+  trusteeRelationships     TrusteeRelationship[]     @relation("OwnerTrustees")
+  assignedAsTrustee        TrusteeRelationship[]     @relation("TrusteeAssignments")
+  beneficiaryRelationships BeneficiaryRelationship[] @relation("OwnerBeneficiaries")
+  assignedAsBeneficiary    BeneficiaryRelationship[] @relation("BeneficiaryAssignments")
+
+  // Assets and Legacy
+  assets       Asset[]
+  legacyPlans  LegacyPlan[]
+  deathCases   DeathCase[]   @relation("OwnerCases")
+  reviewedCases DeathCase[]  @relation("AssignedCaseReviewer")
+
+  @@map("users")
+}
+
+model UserProfile {
+  id                       String    @id @default(uuid())
+  userId                   String    @unique
+  user                     User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  displayName              String
+  legalName                String?
+  dateOfBirth              DateTime?
+  nationality              String?
+  residenceCountry         String?
+  identityStatus           String    @default("NOT_REQUIRED")
+  lastMeaningfulActivityAt DateTime  @default(now())
+  profileVersion           Int       @default(1)
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+
+  @@map("user_profiles")
+}
+
+model ConsentRecord {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  consentType String
+  purpose     String
+  version     String
+  withdrawn   Boolean   @default(false)
+  withdrawnAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId, consentType])
+  @@map("consent_records")
+}
+
+model AdminRoleAssignment {
+  id          String    @id @default(uuid())
+  adminUserId String
+  adminUser   User      @relation(fields: [adminUserId], references: [id], onDelete: Restrict)
+  role        String
+  scope       String?
+  assignedBy  String
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([adminUserId, role])
+  @@map("admin_role_assignments")
+}
+
+// ==============================================================================
+// 2. People & Trusted Network
+// ==============================================================================
+
+model TrusteeRelationship {
+  id                   String    @id @default(uuid())
+  ownerId              String
+  owner                User      @relation("OwnerTrustees", fields: [ownerId], references: [id], onDelete: Restrict)
+  personUserId         String?
+  personUser           User?     @relation("TrusteeAssignments", fields: [personUserId], references: [id], onDelete: Restrict)
+  nameSnapshot         String
+  emailSnapshot        String
+  phoneSnapshot        String?
+  relationshipType     String
+  status               String    @default("INVITED")
+  invitationTokenHash  String?
+  acceptedAt           DateTime?
+  removedAt            DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@index([ownerId, status])
+  @@index([personUserId])
+  @@map("trustee_relationships")
+}
+
+model BeneficiaryRelationship {
+  id               String    @id @default(uuid())
+  ownerId          String
+  owner            User      @relation("OwnerBeneficiaries", fields: [ownerId], references: [id], onDelete: Restrict)
+  personUserId     String?
+  personUser       User?     @relation("BeneficiaryAssignments", fields: [personUserId], references: [id], onDelete: Restrict)
+  nameSnapshot     String
+  emailSnapshot    String
+  phoneSnapshot    String?
+  relationshipType String
+  status           String    @default("ACTIVE")
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  instructions     LegacyInstruction[]
+  releaseGrants    ReleaseGrant[]
+
+  @@index([ownerId, status])
+  @@index([personUserId])
+  @@map("beneficiary_relationships")
+}
+
+// ==============================================================================
+// 3. Vault & Asset Lifecycle
+// ==============================================================================
+
+model Asset {
+  id               String         @id @default(uuid())
+  ownerId          String
+  owner            User           @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  assetType        String
+  title            String
+  sensitivity      String         @default("HIGH_CONFIDENTIAL")
+  status           String         @default("PENDING")
+  currentVersionId String?        @unique
+  currentVersion   AssetVersion?  @relation("CurrentVersion", fields: [currentVersionId], references: [id], onDelete: Restrict)
+  versions         AssetVersion[] @relation("AllVersions")
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([ownerId, status, updatedAt])
+  @@map("assets")
+}
+
+model AssetVersion {
+  id                   String            @id @default(uuid())
+  assetId              String
+  asset                Asset             @relation("AllVersions", fields: [assetId], references: [id], onDelete: Restrict)
+  versionNumber        Int
+  sha256               String
+  storageObjectId      String            @unique
+  storageObject        StorageObjectRef  @relation(fields: [storageObjectId], references: [id], onDelete: Restrict)
+  encryptionAlgorithm  String            @default("AES-256-GCM")
+  keyEnvelopeId        String            @unique
+  keyEnvelope          KeyEnvelope       @relation(fields: [keyEnvelopeId], references: [id], onDelete: Restrict)
+  scanStatus           String            @default("PENDING")
+  committedAt          DateTime?
+  createdAt            DateTime          @default(now())
+
+  asCurrentFor         Asset?            @relation("CurrentVersion")
+  grantAssets          ReleaseGrantAsset[]
+  evidenceItems        DeathEvidence[]
+
+  @@unique([assetId, versionNumber])
+  @@map("asset_versions")
+}
+
+model StorageObjectRef {
+  id             String        @id @default(uuid())
+  provider       String
+  bucket         String
+  objectKey      String        @unique
+  region         String
+  sizeBytes      BigInt
+  mimeType       String
+  lifecycleState String        @default("ACTIVE")
+  createdAt      DateTime      @default(now())
+
+  assetVersion   AssetVersion?
+
+  @@map("storage_object_refs")
+}
+
+model KeyEnvelope {
+  id                 String        @id @default(uuid())
+  kmsKeyReference    String
+  wrappedDek         String
+  algorithmVersion   String        @default("v1")
+  createdAt          DateTime      @default(now())
+
+  assetVersion       AssetVersion?
+
+  @@map("key_envelopes")
+}
+
+// ==============================================================================
+// 4. Legacy Plan
+// ==============================================================================
+
+model LegacyPlan {
+  id             String              @id @default(uuid())
+  ownerId        String
+  owner          User                @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  version        Int                 @default(1)
+  status         String              @default("DRAFT")
+  policyVersion  String
+  acceptedAt     DateTime?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  instructions   LegacyInstruction[]
+
+  @@unique([ownerId, version])
+  @@map("legacy_plans")
+}
+
+model LegacyInstruction {
+  id                 String                  @id @default(uuid())
+  planId             String
+  plan               LegacyPlan              @relation(fields: [planId], references: [id], onDelete: Restrict)
+  beneficiaryId      String
+  beneficiary        BeneficiaryRelationship @relation(fields: [beneficiaryId], references: [id], onDelete: Restrict)
+  assignedAssetIds   String[]
+  customInstructions String?
+  createdAt          DateTime                @default(now())
+
+  @@map("legacy_instructions")
+}
+
+// ==============================================================================
+// 5. Verification, Cases & Release
+// ==============================================================================
+
+model DeathCase {
+  id                 String          @id @default(uuid())
+  ownerId            String
+  owner              User            @relation("OwnerCases", fields: [ownerId], references: [id], onDelete: Restrict)
+  state              String          @default("NONE")
+  initiationType     String
+  policyVersion      String
+  assignedReviewerId String?
+  assignedReviewer   User?           @relation("AssignedCaseReviewer", fields: [assignedReviewerId], references: [id], onDelete: Restrict)
+  stateVersion       Int             @default(1)
+  openedAt           DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  evidence           DeathEvidence[]
+  decisions          CaseDecision[]
+  holds              CaseHold[]
+  releaseGrants      ReleaseGrant[]
+
+  @@index([state, openedAt])
+  @@index([ownerId, openedAt])
+  @@map("death_cases")
+}
+
+model DeathEvidence {
+  id                   String        @id @default(uuid())
+  caseId               String
+  case                 DeathCase     @relation(fields: [caseId], references: [id], onDelete: Restrict)
+  sourceAssetVersionId String
+  sourceAssetVersion   AssetVersion  @relation(fields: [sourceAssetVersionId], references: [id], onDelete: Restrict)
+  submitterId          String
+  evidenceType         String
+  issuingAuthority     String
+  issuingCountry       String
+  issueDate            DateTime
+  reviewStatus         String        @default("PENDING_REVIEW")
+  notes                String?
+  createdAt            DateTime      @default(now())
+
+  @@index([caseId])
+  @@map("death_evidence")
+}
+
+model CaseDecision {
+  id             String    @id @default(uuid())
+  caseId         String
+  case           DeathCase @relation(fields: [caseId], references: [id], onDelete: Restrict)
+  decisionType   String
+  actorAdminId   String
+  actorAdmin     User      @relation(fields: [actorAdminId], references: [id], onDelete: Restrict)
+  reasonCode     String
+  rationale      String
+  policyVersion  String
+  createdAt      DateTime  @default(now())
+
+  @@index([caseId, decisionType])
+  @@map("case_decisions")
+}
+
+model CaseHold {
+  id              String    @id @default(uuid())
+  caseId          String
+  case            DeathCase @relation(fields: [caseId], references: [id], onDelete: Restrict)
+  placedById      String
+  reasonCode      String
+  rationale       String
+  active          Boolean   @default(true)
+  liftedById      String?
+  liftedRationale String?
+  placedAt        DateTime  @default(now())
+  liftedAt        DateTime?
+
+  @@index([caseId, active])
+  @@map("case_holds")
+}
+
+model ReleaseGrant {
+  id            String                  @id @default(uuid())
+  caseId        String
+  case          DeathCase               @relation(fields: [caseId], references: [id], onDelete: Restrict)
+  beneficiaryId String
+  beneficiary   BeneficiaryRelationship @relation(fields: [beneficiaryId], references: [id], onDelete: Restrict)
+  status        String                  @default("PENDING")
+  expiresAt     DateTime
+  revokedAt     DateTime?
+  createdAt     DateTime                @default(now())
+
+  grantAssets   ReleaseGrantAsset[]
+
+  @@index([beneficiaryId, status, expiresAt])
+  @@index([caseId, status])
+  @@map("release_grants")
+}
+
+model ReleaseGrantAsset {
+  id             String       @id @default(uuid())
+  grantId        String
+  grant          ReleaseGrant @relation(fields: [grantId], references: [id], onDelete: Restrict)
+  assetVersionId String
+  assetVersion   AssetVersion @relation(fields: [assetVersionId], references: [id], onDelete: Restrict)
+
+  @@unique([grantId, assetVersionId])
+  @@map("release_grant_assets")
+}
+
+// ==============================================================================
+// 6. Audit & Outbox
+// ==============================================================================
+
+model AuditEvent {
+  id          String   @id @default(uuid())
+  occurredAt  DateTime @default(now())
+  actorType   String
+  actorId     String?
+  action      String
+  targetType  String
+  targetId    String
+  outcome     String
+  reasonCode  String?
+  requestId   String
+  metadata    Json?
+
+  @@index([occurredAt])
+  @@index([actorId, occurredAt])
+  @@index([targetType, targetId, occurredAt])
+  @@index([requestId])
+  @@map("audit_events")
+}
+
+model OutboxEvent {
+  id               String   @id @default(uuid())
+  eventType        String
+  payload          Json
+  status           String   @default("PENDING")
+  attempts         Int      @default(0)
+  deduplicationKey String   @unique
+  nextAttemptAt    DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([status, nextAttemptAt])
+  @@map("outbox_events")
+}
+
+model AIProcessingJob {
+  id          String   @id @default(uuid())
+  taskName    String
+  purpose     String
+  dataClass   String
+  provider    String
+  modelId     String
+  status      String   @default("QUEUED")
+  tokenCount  Int?
+  latencyMs   Int?
+  createdAt   DateTime @default(now())
+
+  @@map("ai_processing_jobs")
+}
+
+model DeletionRequest {
+  id               String   @id @default(uuid())
+  requesterId      String
+  scope            String
+  reasonCode       String
+  legalHoldPresent Boolean  @default(false)
+  status           String   @default("PENDING")
+  createdAt        DateTime @default(now())
+
+  @@map("deletion_requests")
+}

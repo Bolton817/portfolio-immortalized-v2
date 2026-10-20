@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "Portfolio Immortalized",
+    "slug": "portfolio-immortalized",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#070F2B"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.piecorp.portfolioimmortalized"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#070F2B"
+      },
+      "package": "com.piecorp.portfolioimmortalized"
+    }
+  }
+}

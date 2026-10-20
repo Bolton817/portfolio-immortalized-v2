@@ -1,0 +1,161 @@
+import { AITaskName, AIProviderName } from '@portfolio-immortalized/domain';
+import { BaseAIProvider } from './base.js';
+import { AIProviderResponse, AITaskExecutionOptions } from '../types.js';
+
+export class MockAIProvider extends BaseAIProvider {
+  public readonly name = AIProviderName.MOCK;
+  public readonly isConfigured = true;
+
+  public async executeTask<TInput, TOutput>(
+    task: AITaskName,
+    input: TInput,
+    _options?: AITaskExecutionOptions
+  ): Promise<AIProviderResponse<TOutput>> {
+    let output: unknown;
+    const inp = input as any;
+
+    switch (task) {
+      case AITaskName.DOCUMENT_CLASSIFICATION: {
+        const name = (inp.fileName || '').toLowerCase();
+        const snippet = (inp.textSnippet || '').toLowerCase();
+
+        let category = 'DOCUMENT';
+        let detected = 'General Legal Document';
+        let confidence = 0.88;
+
+        if (name.includes('will') || snippet.includes('will') || snippet.includes('testament')) {
+          category = 'WILL';
+          detected = 'Last Will and Testament';
+          confidence = 0.96;
+        } else if (name.includes('passport') || name.includes('id') || snippet.includes('national id')) {
+          category = 'IDENTITY';
+          detected = 'National Identity Document';
+          confidence = 0.95;
+        } else if (name.includes('title') || name.includes('deed') || snippet.includes('land registry')) {
+          category = 'DOCUMENT';
+          detected = 'Title Deed & Land Registry Record';
+          confidence = 0.92;
+        } else if (name.match(/\.(jpg|jpeg|png|webp)$/i) && !name.includes('scan')) {
+          category = 'PHOTO';
+          detected = 'Family Archive Photograph';
+          confidence = 0.9;
+        } else if (name.match(/\.(mp4|mov)$/i)) {
+          category = 'VIDEO';
+          detected = 'Legacy Video Recording';
+          confidence = 0.94;
+        } else if (name.match(/\.(mp3|m4a|wav)$/i)) {
+          category = 'AUDIO';
+          detected = 'Legacy Audio Note';
+          confidence = 0.94;
+        }
+
+        output = {
+          suggestedCategory: category,
+          confidence,
+          detectedDocumentType: detected,
+          rationale: `Classified based on file metadata and content signature (${inp.fileName || 'unknown'}).`,
+        };
+        break;
+      }
+
+      case AITaskName.BLUR_LEGIBILITY_ASSESSMENT: {
+        const isLowRes = (inp.width && inp.width < 300) || (inp.height && inp.height < 300) || (inp.fileSizeBytes && inp.fileSizeBytes < 4000);
+        if (isLowRes) {
+          output = {
+            isLegible: false,
+            blurScore: 0.38,
+            detectedResolution: inp.width && inp.height ? `${inp.width}x${inp.height}` : 'Low resolution',
+            recommendation: 'RETAKE_BLURRY',
+            feedback: 'Image resolution is low and key text edges appear degraded. Recommend retaking in bright light.',
+          };
+        } else {
+          output = {
+            isLegible: true,
+            blurScore: 0.94,
+            detectedResolution: inp.width && inp.height ? `${inp.width}x${inp.height}` : '1920x1080',
+            recommendation: 'ACCEPT',
+            feedback: 'Scan is clear, high-contrast, and legible for verification triage.',
+          };
+        }
+        break;
+      }
+
+      case AITaskName.METADATA_EXTRACTION: {
+        const text = inp.textSnippet || '';
+        output = {
+          documentTitle: text.includes('Death') ? 'Official Certificate of Death' : 'Asset Custody Document',
+          documentDate: '2026-04-12',
+          issuingAuthority: 'Civil Registration Services, Republic of Kenya',
+          jurisdiction: 'Kenya',
+          partiesMentioned: ['Account Holder', 'Designated Beneficiary'],
+          referenceNumbers: ['REG-2026-KE-00912'],
+          confidence: 0.93,
+        };
+        break;
+      }
+
+      case AITaskName.CASE_SUMMARY_DRAFTING: {
+        output = {
+          draftSummary: `Verification dossier for ${inp.deceasedName || 'Account Holder'}. ${inp.evidenceItems?.length || 0} evidence items submitted by trustees. Two active trustees co-signed with consistent statements.`,
+          keyParties: {
+            deceased: inp.deceasedName || 'Unknown Deceased',
+            trustees: inp.trusteeStatements ? inp.trusteeStatements.map((t: any) => t.trusteeName) : [],
+            beneficiaries: ['Designated Estate Beneficiary'],
+          },
+          evidenceChecklist: (inp.evidenceItems || []).map((e: any) => ({
+            item: `${e.type} (${e.issuingAuthority})`,
+            verified: true,
+          })),
+          criticalDiscrepancies: [],
+          suggestedNextSteps: [
+            'Conduct primary reviewer triage checklist inspection',
+            'Cross-check death certificate number with Civil Registration registry',
+            'Advance to second reviewer if quorum and evidence are complete',
+          ],
+          nonAuthoritativeDisclaimer:
+            'Draft generated by AI for triage review only. AI has zero decision authority. Human verification and independent second approval are strictly required.',
+        };
+        break;
+      }
+
+      case AITaskName.ESTATE_ONBOARDING_GUIDANCE: {
+        output = {
+          answer:
+            'To protect your legacy under Kenyan Law (Cap. 160), nominate at least two independent trustees and store your primary title deeds, vital records, and letters of wishes in the encrypted vault.',
+          suggestedActions: [
+            {
+              title: 'Upload Core Documents',
+              route: '/vault',
+              reason: 'Adding your primary identity documents and will increases your readiness score.',
+            },
+            {
+              title: 'Appoint Trustees',
+              route: '/people',
+              reason: 'At least two trustees are required to verify life events independently.',
+            },
+            {
+              title: 'Assign Beneficiaries',
+              route: '/legacy',
+              reason: 'Specify which family members receive individual vault items.',
+            },
+          ],
+          successionContextKenya:
+            'Under the Kenya Law of Succession Act (Cap. 160), testamentary dispositions must comply with formal execution standards. Portfolio Immortalized acts as a secure digital custodian to deliver your records.',
+          disclaimer:
+            'This guidance is educational and does not constitute formal legal advice under Kenyan Law (Cap. 160). Consult a licensed advocate for legal will execution.',
+        };
+        break;
+      }
+
+      default:
+        throw new Error(`Unhandled mock task: ${task}`);
+    }
+
+    return {
+      output: output as TOutput,
+      tokenCount: 142,
+      modelId: 'mock-deterministic-v1',
+      rawOutput: JSON.stringify(output),
+    };
+  }
+}
