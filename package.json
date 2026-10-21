@@ -9,6 +9,7 @@
     "server"
   ],
   "scripts": {
+    "dev": "npm run dev --workspace=@portfolio-immortalized/web",
     "build": "npm run build --workspaces --if-present",
     "test": "vitest run",
     "test:watch": "vitest",
