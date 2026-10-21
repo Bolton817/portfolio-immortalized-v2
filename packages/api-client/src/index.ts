@@ -478,5 +478,83 @@ export class PortfolioApiClient {
       body: JSON.stringify(payload ?? {}),
     });
   }
+
+  // ============================================================================
+  // Stage 11: Billing, Subscriptions, Will Builder, & Telemetry APIs
+  // ============================================================================
+
+  public async initiateMpesaPayment(payload: {
+    phoneNumber: string;
+    tier: string;
+    cycle: string;
+  }): Promise<{ success: boolean; data: any }> {
+    return this.request('/billing/mpesa', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  public async createStripeCheckout(payload: {
+    tier: string;
+    cycle: string;
+    successUrl: string;
+    cancelUrl: string;
+  }): Promise<{ success: boolean; data: { sessionId: string; checkoutUrl: string } }> {
+    return this.request('/billing/stripe', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  public async getSubscription(): Promise<{ success: boolean; data: any }> {
+    return this.request('/billing/subscription', {
+      method: 'GET',
+    });
+  }
+
+  public async getWillDraft(): Promise<{ success: boolean; data: any }> {
+    return this.request('/will', {
+      method: 'GET',
+    });
+  }
+
+  public async saveWillDraft(payload: any): Promise<{ success: boolean; data: { will: any; validation: any } }> {
+    return this.request('/will', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  public async getWillLegalText(): Promise<{ success: boolean; data: { legalText: string } }> {
+    return this.request('/will/legal-text', {
+      method: 'GET',
+    });
+  }
+
+  public async recordPhysicalCustody(payload: any): Promise<{ success: boolean; data: any }> {
+    return this.request('/will/physical-custody', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  public async registerDevicePushToken(payload: {
+    token: string;
+    platform: 'ios' | 'android' | 'web';
+    deviceModel?: string;
+    appVersion?: string;
+  }): Promise<{ success: boolean; data: any }> {
+    return this.request('/notifications/tokens', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  public async getSystemStatus(): Promise<{ success: boolean; data: any }> {
+    return this.request('/status', {
+      method: 'GET',
+    });
+  }
 }
+
 

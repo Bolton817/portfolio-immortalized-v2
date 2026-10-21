@@ -34,4 +34,10 @@
 | **DR-002** | Disaster Recovery | P0 | Automated isolated disaster recovery restore drill runner | `server/src/scripts/automated-restore-drill.ts` | Chapter 30.4 checklist, RTO < 4h, RPO < 15m verified |
 | **SMOKE-001** | Production Smoke | P0 | Synthetic production smoke test suite (6 multi-actor journeys) | `server/tests/synthetic-production-smoke.test.ts` | 6/6 journeys pass, forensic watermark & isolation verified |
 | **SIGNOFF-001** | Sign-Off Matrix | P0 | Formal production implementation sign-off register | `docs/production-implementation-signoff.md` | All 7 stakeholder roles approved, TDD Page 95 complete |
+| **NOTIF-002** | Notifications | P0 | Multi-channel gateway (Africa's Talking +254, Twilio intl, Expo Push, Brevo email) | `server/src/notifications/`, `apps/mobile/src/services/push.ts` | `multi-channel-notifications.test.ts`, neutral phrasing enforced |
+| **BILL-001** | Billing & Monetization | P0 | Dual payment gateway (M-Pesa Daraja 2.0 STK push & Stripe) with tier quota enforcement | `server/src/billing/`, `server/src/dal/billing-dal.ts` | `billing-subscription.test.ts`, quota caps & callbacks verified |
+| **WILL-001** | Statutory Will Builder | P0 | Kenya Law of Succession Act (Cap. 160) Sec 11 & Sec 13 conflict check and physical custody | `server/src/will/`, `apps/web/app/(owner)/will-builder/` | `will-builder-cap160.test.ts`, forfeiture conflict detected |
+| **VERIF-002** | Verification | P0 | Beneficiary identity verification and biometric video selfie liveness scoring | `server/src/services/identity-verification.ts` | `will-builder-cap160.test.ts`, SHA-256 attestation hash bound |
+| **OPS-006** | Observability & Telemetry | P0 | Prometheus text exporter & public status summary page | `server/src/observability/metrics-exporter.ts`, `/api/v1/status` | `will-builder-cap160.test.ts`, 7 subsystem health probes active |
+
 

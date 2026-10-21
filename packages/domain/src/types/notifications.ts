@@ -17,6 +17,38 @@ export enum NotificationChannel {
   EMAIL = 'EMAIL',
   SMS = 'SMS',
   IN_APP = 'IN_APP',
+  PUSH = 'PUSH',
+}
+
+export enum NotificationUrgency {
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+  CRITICAL = 'CRITICAL',
+}
+
+export interface DeviceTokenRecord {
+  id: string;
+  userId: string;
+  token: string;
+  platform: 'ios' | 'android' | 'web';
+  deviceModel?: string;
+  appVersion?: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface MultiChannelNotificationRequest {
+  recipientId: string;
+  recipientEmail?: string;
+  recipientPhone?: string;
+  eventType: NotificationEventType;
+  urgency: NotificationUrgency;
+  title: string;
+  body: string;
+  data?: Record<string, unknown>;
+  actionUrl?: string;
 }
 
 export enum OutboxEventStatus {

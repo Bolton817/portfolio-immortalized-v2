@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Shield, Folder, Users, BookOpen, Settings, LogOut } from 'lucide-react';
+import { Shield, Folder, Users, BookOpen, Settings, LogOut, FileText, CreditCard } from 'lucide-react';
 
 export default function OwnerLayout({
   children,
@@ -46,6 +46,20 @@ export default function OwnerLayout({
             >
               <BookOpen className="w-4 h-4 text-slate-500" />
               <span>Legacy Plan</span>
+            </Link>
+            <Link
+              href="/will-builder"
+              className="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+            >
+              <FileText className="w-4 h-4 text-slate-500" />
+              <span>Will Builder (Cap. 160)</span>
+            </Link>
+            <Link
+              href="/billing"
+              className="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+            >
+              <CreditCard className="w-4 h-4 text-slate-500" />
+              <span>Billing & Subscription</span>
             </Link>
             <Link
               href="/settings"
