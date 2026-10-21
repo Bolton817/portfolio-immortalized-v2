@@ -5,19 +5,31 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
+    "scheme": "portfolio-immortalized",
     "userInterfaceStyle": "light",
     "splash": {
       "backgroundColor": "#070F2B"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.piecorp.portfolioimmortalized"
+      "bundleIdentifier": "com.piecorp.portfolioimmortalized",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Portfolio Immortalized uses the camera to scan legal documents and record private video messages for your vault.",
+        "NSMicrophoneUsageDescription": "Portfolio Immortalized uses the microphone to record audio notes and video messages.",
+        "NSFaceIDUsageDescription": "Portfolio Immortalized uses Face ID to securely unlock your private legacy vault."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#070F2B"
       },
-      "package": "com.piecorp.portfolioimmortalized"
+      "package": "com.piecorp.portfolioimmortalized",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT"
+      ]
     }
   }
 }

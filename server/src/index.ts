@@ -26,6 +26,8 @@ export * from './security/crypto-timing.js';
 export * from './observability/logger.js';
 export * from './observability/telemetry.js';
 export * from './observability/sentry.js';
+export * from './scripts/incident-response.js';
+export * from './scripts/automated-restore-drill.js';
 export * from '@portfolio-immortalized/domain';
 export * from '@portfolio-immortalized/validation';
 

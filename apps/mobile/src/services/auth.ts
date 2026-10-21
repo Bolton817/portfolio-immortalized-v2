@@ -130,6 +130,18 @@ export class MobileAuthService {
   }
 
   /**
+   * Identifies whether the account is designated for App Store / Google Play review sandbox.
+   * Under TDD Chapter 35.1 & 35.2, reviewers operate against safe synthetic sandboxes.
+   */
+  isReviewerAccount(email?: string): boolean {
+    if (!email) return false;
+    const normalized = email.toLowerCase().trim();
+    return normalized.endsWith('@apple-test.portfolio-immortalized.internal') ||
+           normalized.endsWith('@google-play.portfolio-immortalized.internal') ||
+           normalized === 'reviewer@piecorp.co.ke';
+  }
+
+  /**
    * Purges all keys, tokens, and local caches (R-13)
    */
   async logout(): Promise<void> {

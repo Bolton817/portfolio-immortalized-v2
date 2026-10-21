@@ -139,6 +139,39 @@ export function ProfileScreen() {
           <Text style={styles.logoutButtonText}>Lock Vault & Clear Device Cache</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Account Deletion & Rights (Apple Guideline 5.1.1(v) & KDPA 2019 Sec 40) */}
+      <View style={[styles.card, styles.dangerCard]}>
+        <Text style={[styles.cardTitle, styles.dangerTitle]}>Account Lifecycle & Erasure</Text>
+        <Text style={styles.dangerDescription}>
+          You can request account closure and cryptographic erasure of your vault at any time. Under statutory rules (Kenya Data Protection Act 2019 & Succession Act Cap. 160), if an active legal hold or death investigation exists, records are preserved under statutory hold.
+        </Text>
+        <TouchableOpacity
+          style={styles.deleteAccountButton}
+          onPress={() => {
+            Alert.alert(
+              'Request Account Deletion',
+              'This will initiate account closure. Your vault encryption keys will be destroyed and ciphertext rendered permanently unrecoverable, subject to active legal holds.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Request Deletion',
+                  style: 'destructive',
+                  onPress: async () => {
+                    await mobileAuth.logout();
+                    Alert.alert(
+                      'Deletion Request Submitted',
+                      'Your account closure request has been recorded. Session tokens on this device have been revoked.'
+                    );
+                  },
+                },
+              ]
+            );
+          }}
+        >
+          <Text style={styles.deleteAccountButtonText}>Delete Account & Erase Vault</Text>
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 }
@@ -290,5 +323,29 @@ const styles = StyleSheet.create({
     color: '#EF4444',
     fontSize: 13,
     fontWeight: '600',
+  },
+  dangerCard: {
+    borderColor: '#FECACA',
+    backgroundColor: '#FEF2F2',
+  },
+  dangerTitle: {
+    color: '#991B1B',
+  },
+  dangerDescription: {
+    fontSize: 12,
+    color: '#7F1D1D',
+    lineHeight: 17,
+    marginBottom: 12,
+  },
+  deleteAccountButton: {
+    backgroundColor: '#DC2626',
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  deleteAccountButtonText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
   },
 });

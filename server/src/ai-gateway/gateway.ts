@@ -50,6 +50,8 @@ export class AIGatewayService {
   private providers: Map<AIProviderName, AIProviderAdapter> = new Map();
   private jobs: Map<string, AIGatewayJobRecord> = new Map();
   private auditService: AuditService;
+  private disabledTasks: Set<string> = new Set();
+  private globalKillswitch: boolean = false;
 
   constructor(auditService: AuditService = new AuditService()) {
     this.auditService = auditService;
@@ -72,6 +74,19 @@ export class AIGatewayService {
     return provider;
   }
 
+  public setKillswitch(disabled: boolean, taskName?: AITaskName): void {
+    if (taskName) {
+      if (disabled) this.disabledTasks.add(taskName);
+      else this.disabledTasks.delete(taskName);
+    } else {
+      this.globalKillswitch = disabled;
+    }
+  }
+
+  public isTaskDisabled(taskName: AITaskName): boolean {
+    return this.globalKillswitch || this.disabledTasks.has(taskName);
+  }
+
   /**
    * Dispatches an allowlisted task through the governed AI Gateway
    */
@@ -87,6 +102,11 @@ export class AIGatewayService {
       dataClass = AIDataClassification.C3_HIGH_CONFIDENTIAL,
       options,
     } = params;
+
+    // 0. Enforce Emergency Killswitch (Runbook 33.5)
+    if (this.isTaskDisabled(taskName)) {
+      throw new Error(`AI Gateway task '${taskName}' is disabled under emergency policy killswitch.`);
+    }
 
     // 1. Enforce Task Allowlist (Invariant AI-001)
     assertAllowedAITask(taskName);

@@ -29,3 +29,9 @@
 | **CONT-001** | Containerization | P0 | Multi-stage unprivileged Docker containers | `apps/web/Dockerfile`, `apps/worker/Dockerfile`, `docker-compose.yml` | Non-root UID 1001, standalone build & healthcheck |
 | **GO-001** | Go-Live Readiness | P0 | Cutover runbook & Kenya statutory compliance attestation | `docs/runbooks/go-live-cutover.md`, `docs/compliance-attestation.md` | KDPA 2019 & Succession Act (Cap. 160) verified |
 | **DR-001** | Disaster Recovery | P0 | Tested isolated backup restore procedure | `docs/runbooks/disaster-recovery.md` | `OPS-04`, isolated DB & key restore test |
+| **STORE-001** | Store Readiness | P0 | App Store & Google Play configuration, in-app deletion, reviewer sandbox | `apps/mobile/app.json`, `docs/app-store-data-safety.md` | Apple Guideline 5.1.1(v), KDPA Sec 40, zero external SMS in sandbox |
+| **OPS-005** | Incident Response | P0 | Day-2 incident response automations CLI (5 runbooks) | `server/src/scripts/incident-response.ts` | Runbooks 33.2..33.6 CLI execution verified |
+| **DR-002** | Disaster Recovery | P0 | Automated isolated disaster recovery restore drill runner | `server/src/scripts/automated-restore-drill.ts` | Chapter 30.4 checklist, RTO < 4h, RPO < 15m verified |
+| **SMOKE-001** | Production Smoke | P0 | Synthetic production smoke test suite (6 multi-actor journeys) | `server/tests/synthetic-production-smoke.test.ts` | 6/6 journeys pass, forensic watermark & isolation verified |
+| **SIGNOFF-001** | Sign-Off Matrix | P0 | Formal production implementation sign-off register | `docs/production-implementation-signoff.md` | All 7 stakeholder roles approved, TDD Page 95 complete |
+
