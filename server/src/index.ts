@@ -21,6 +21,11 @@ export * from './notifications/outbox.js';
 export * from './crypto/watermark.js';
 export * from './dal/beneficiary.js';
 export * from './jobs/runner.js';
+export * from './security/rate-limiter.js';
+export * from './security/crypto-timing.js';
+export * from './observability/logger.js';
+export * from './observability/telemetry.js';
+export * from './observability/sentry.js';
 export * from '@portfolio-immortalized/domain';
 export * from '@portfolio-immortalized/validation';
 

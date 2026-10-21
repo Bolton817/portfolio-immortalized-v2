@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Modal } from 'react-native';
 import { ScannerScreen } from './ScannerScreen';
+import { offlineQueue } from '../../services/offlineQueue';
 
 interface MobileVaultAsset {
   id: string;
@@ -94,6 +95,14 @@ export function VaultScreen() {
           Every document is protected with a unique 256-bit envelope key. Raw files are never exposed.
         </Text>
       </View>
+
+      {offlineQueue.getPendingCount() > 0 && (
+        <View style={styles.offlineBanner}>
+          <Text style={styles.offlineBannerText}>
+            📶 Offline Sync: {offlineQueue.getPendingCount()} item(s) queued for synchronization
+          </Text>
+        </View>
+      )}
 
       {/* Action Buttons */}
       <View style={styles.actionRow}>
@@ -336,5 +345,19 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: 'monospace',
     color: '#94A3B8',
+  },
+  offlineBanner: {
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 12,
+  },
+  offlineBannerText: {
+    color: '#92400E',
+    fontSize: 12,
+    fontWeight: '600',
   },
 });

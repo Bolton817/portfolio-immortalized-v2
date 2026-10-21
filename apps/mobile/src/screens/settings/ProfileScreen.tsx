@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { mobileAuth } from '../../services/auth';
 
 export function ProfileScreen() {
   const [displayName, setDisplayName] = useState('Alex Johnson');
@@ -7,10 +8,35 @@ export function ProfileScreen() {
   const [dateOfBirth, setDateOfBirth] = useState('1985-05-15');
   const [residenceCountry, setResidenceCountry] = useState('Kenya (KE)');
   const [isSaved, setIsSaved] = useState(false);
+  const [isBiometricEnabled, setIsBiometricEnabled] = useState(true);
 
   const handleSave = () => {
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 3000);
+  };
+
+  const handleToggleBiometrics = async () => {
+    const nextVal = !isBiometricEnabled;
+    setIsBiometricEnabled(nextVal);
+    await mobileAuth.setBiometricsEnabled(nextVal);
+  };
+
+  const handleLogout = async () => {
+    Alert.alert(
+      'Lock Vault',
+      'Are you sure you want to lock the vault and purge local session tokens?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Lock & Purge',
+          style: 'destructive',
+          onPress: async () => {
+            await mobileAuth.logout();
+            Alert.alert('Vault Locked', 'Your device session tokens and local caches have been securely purged.');
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -75,6 +101,42 @@ export function ProfileScreen() {
 
         <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
           <Text style={styles.saveButtonText}>Save Changes</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Security & Biometrics Card (AUTH-003, R-13) */}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Device Security & Privacy</Text>
+
+        <View style={styles.securityRow}>
+          <View style={styles.securityInfo}>
+            <Text style={styles.securityTitle}>Biometric App Unlock</Text>
+            <Text style={styles.securitySubtitle}>Require Face ID / Fingerprint to open vault</Text>
+          </View>
+          <TouchableOpacity
+            style={[styles.toggleButton, isBiometricEnabled && styles.toggleButtonActive]}
+            onPress={handleToggleBiometrics}
+          >
+            <Text style={[styles.toggleButtonText, isBiometricEnabled && styles.toggleButtonTextActive]}>
+              {isBiometricEnabled ? 'ENABLED' : 'DISABLED'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.divider} />
+
+        <View style={styles.securityRow}>
+          <View style={styles.securityInfo}>
+            <Text style={styles.securityTitle}>Auto-Lock on Inactivity</Text>
+            <Text style={styles.securitySubtitle}>Locks vault after 5 min in background</Text>
+          </View>
+          <Text style={styles.badgeText}>5 MIN</Text>
+        </View>
+
+        <View style={styles.divider} />
+
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Text style={styles.logoutButtonText}>Lock Vault & Clear Device Cache</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -163,6 +225,70 @@ const styles = StyleSheet.create({
   saveButtonText: {
     color: '#FFFFFF',
     fontSize: 14,
+    fontWeight: '600',
+  },
+  securityRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  securityInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
+  securityTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#0F172A',
+  },
+  securitySubtitle: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  toggleButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+    backgroundColor: '#E2E8F0',
+  },
+  toggleButtonActive: {
+    backgroundColor: '#0284C7',
+  },
+  toggleButtonText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  toggleButtonTextActive: {
+    color: '#FFFFFF',
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0284C7',
+    backgroundColor: '#E0F2FE',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginVertical: 10,
+  },
+  logoutButton: {
+    borderWidth: 1,
+    borderColor: '#EF4444',
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 6,
+  },
+  logoutButtonText: {
+    color: '#EF4444',
+    fontSize: 13,
     fontWeight: '600',
   },
 });

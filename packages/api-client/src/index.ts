@@ -105,6 +105,18 @@ export class PortfolioApiClient {
     return this.request('/me');
   }
 
+  public async getProfile(): Promise<unknown> {
+    return this.request('/me/profile');
+  }
+
+  public async updateProfile(payload: unknown, idempotencyKey?: string): Promise<unknown> {
+    return this.request('/me/profile', {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+      idempotencyKey,
+    });
+  }
+
   // --- Vault ---
   public async listVaultAssets(query?: { category?: string; search?: string }): Promise<any> {
     const params = new URLSearchParams();

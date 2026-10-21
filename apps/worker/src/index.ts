@@ -17,7 +17,11 @@ import {
   VaultDal,
   AuditService,
   BrevoNotificationAdapter,
+  logger,
 } from '@portfolio-immortalized/server';
+
+let isShuttingDown = false;
+let isCycleActive = false;
 
 export async function bootstrapWorker() {
   const auditService = new AuditService();
@@ -37,21 +41,51 @@ export async function bootstrapWorker() {
   });
 
   const intervalSeconds = Number(process.env.WORKER_INTERVAL_SECONDS) || 60;
-  console.log(`[Worker] Started background daemon running every ${intervalSeconds} seconds...`);
+  logger.info(`[Worker] Started background daemon running every ${intervalSeconds} seconds...`);
 
   const runCycle = async () => {
+    if (isShuttingDown || isCycleActive) {
+      return;
+    }
+    isCycleActive = true;
     try {
       const summary = await worker.runTick();
-      console.log(
+      logger.info(
         `[Worker Tick ${summary.timestamp}] Swept: ${summary.inactivity.totalEvaluated}, Outbox: ${summary.outbox.processed}, Expired: ${summary.expiredGrantsCount}`
       );
     } catch (err) {
-      console.error('[Worker Tick Error]', err);
+      logger.error('[Worker Tick Error]', { error: err as Error });
+    } finally {
+      isCycleActive = false;
     }
   };
 
   await runCycle();
-  return setInterval(runCycle, intervalSeconds * 1000);
+  const timer = setInterval(runCycle, intervalSeconds * 1000);
+
+  // Graceful Shutdown Signal Trapping (OPS-03, Container Lifecycle)
+  const handleShutdown = async (signal: string) => {
+    logger.info(`[Worker] Received ${signal}. Initiating graceful shutdown...`);
+    isShuttingDown = true;
+    clearInterval(timer);
+
+    // Wait up to 5 seconds if a cycle is currently processing
+    let attempts = 0;
+    while (isCycleActive && attempts < 10) {
+      await new Promise((res) => setTimeout(res, 500));
+      attempts++;
+    }
+
+    logger.info('[Worker] Background processing cleanly stopped. Process exiting.');
+    if (process.env.NODE_ENV !== 'test') {
+      process.exit(0);
+    }
+  };
+
+  process.on('SIGTERM', () => handleShutdown('SIGTERM'));
+  process.on('SIGINT', () => handleShutdown('SIGINT'));
+
+  return { worker, timer, handleShutdown };
 }
 
 if (process.env.NODE_ENV !== 'test' && require.main === module) {

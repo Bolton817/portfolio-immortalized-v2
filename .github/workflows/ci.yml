@@ -8,7 +8,7 @@ on:
 
 jobs:
   test-and-verify:
-    name: Build, Lint, Typecheck and Test
+    name: Build, Lint, Typecheck and Security Verification
     runs-on: ubuntu-latest
 
     steps:
@@ -34,13 +34,20 @@ jobs:
         run: npx prisma generate
 
       - name: Build Shared Packages
-        run: npm run build --workspace=@portfolio-immortalized/domain && npm run build --workspace=@portfolio-immortalized/validation && npm run build --workspace=@portfolio-immortalized/api-client && npm run build --workspace=@portfolio-immortalized/server
+        run: |
+          npm run build --workspace=@portfolio-immortalized/domain
+          npm run build --workspace=@portfolio-immortalized/validation
+          npm run build --workspace=@portfolio-immortalized/api-client
+          npm run build --workspace=@portfolio-immortalized/server
 
-      - name: Typecheck Workspaces
+      - name: Typecheck All Workspaces (including Mobile & Worker)
         run: npm run typecheck --workspaces --if-present
 
-      - name: Run Unit & Security Test Suite
+      - name: Run Full Unit & Security Penetration Test Suite
         run: npm test
+
+      - name: Build Background Worker Daemon
+        run: npm run build --workspace=@portfolio-immortalized/worker
 
       - name: Build Next.js Web App
         run: npm run build --workspace=@portfolio-immortalized/web
